@@ -1,0 +1,36 @@
+resource "kubernetes_deployment_v1" "app" {
+  metadata {
+    name      = "devops-app"
+    namespace = kubernetes_namespace.env.metadata[0].name
+    labels = {
+      app = "devops"
+    }
+  }
+  spec {
+    replicas = 1
+
+    selector {
+      match_labels = {
+        app = "devops"
+      }
+    }
+
+    template {
+      metadata {
+        labels = {
+          app = "devops"
+        }
+      }
+
+      spec {
+        container {
+          name  = "devops-container"
+          image = "naveen266/devops-app:${var.image_tag}"
+          ports {
+            container_port = 3000
+          }
+        }
+      }
+    }
+  }
+}

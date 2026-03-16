@@ -1,0 +1,16 @@
+resource "kubernetes_service_v1" "app" {
+metadata {
+  name      = "devops-service"
+  namespace = kubernetes_namespace.env.metadata[0].name
+}
+spec {
+  selector = {
+    app = "devops"
+  }
+  port {
+    port        = 80
+    target_port = 3000
+  }
+  type = "NodePort"
+}
+}
