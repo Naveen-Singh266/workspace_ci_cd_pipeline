@@ -49,4 +49,4 @@ jobs:
       run: terraform apply -auto-approve -var="image_tag=${{ github.run_number }}"
 
     - name: Verify Deployment  
-      run: kubectl get pods -o wide
+      run: kubectl get pods
