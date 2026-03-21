@@ -1,22 +1,32 @@
-<<<<<<< HEAD
 name: DevOps CI-CD Pipeline
-=======
-name: workspace_ci_cd_pipeline
->>>>>>> 141c161a10703845401c7cd94ef3d4fe899bca60
-
 on:
   push:
     branches: [ master ]
+  pull_request:
+    branches: [ master ]
 
 jobs:
-
-  build:
+  build-and-test:
     runs-on: self-hosted
-
     steps:
-
     - name: Checkout Code
       uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: package.json
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Run tests
+      run: npm test
+
+    - name: Build application
+      run: npm run build
 
     - name: Docker Login
       run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
@@ -28,33 +38,37 @@ jobs:
       run: docker push naveen266/devops-app:${{ github.run_number }}
 
   deploy:
-    needs: build
+    needs: build-and-test
     runs-on: self-hosted
-
+    strategy:
+      matrix:
+        env: [dev, test]
+    environment:
+      name: ${{ matrix.env }}
     steps:
-
     - name: Checkout Code
       uses: actions/checkout@v4
 
     - name: Terraform Init
-      working-directory: infra
+      working-directory: infra_ws
       run: terraform init
 
+    - name: Terraform Workspace Select
+      working-directory: infra_ws
+      run: |
+        terraform workspace select ${{ matrix.env }} || terraform workspace new ${{ matrix.env }}
+
     - name: terraform validate
-      working-directory: infra
+      working-directory: infra_ws
       run: terraform validate
 
     - name: Terraform Plan
-      working-directory: infra
+      working-directory: infra_ws
       run: terraform plan -var="image_tag=${{ github.run_number }}"
 
     - name: Terraform Apply
-      working-directory: infra
+      working-directory: infra_ws
       run: terraform apply -auto-approve -var="image_tag=${{ github.run_number }}"
 
     - name: Verify Deployment  
-<<<<<<< HEAD
-      run: kubectl get pods -o wide
-=======
-      run: kubectl get pods -0 wide
->>>>>>> 141c161a10703845401c7cd94ef3d4fe899bca60
+      run: kubectl get pods -n ${{ matrix.env }} -o wide
