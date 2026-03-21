@@ -18,22 +18,26 @@ jobs:
       with:
         node-version: '18'
         cache: 'npm'
-        cache-dependency-path: package.json
+        cache-dependency-path: apps/package.json
+      working-directory: apps
 
     - name: Install dependencies
       run: npm install
+      working-directory: apps
 
     - name: Run tests
       run: npm test
+      working-directory: apps
 
     - name: Build application
       run: npm run build
+      working-directory: apps
 
     - name: Docker Login
       run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
     
     - name: Build Docker Image
-      run: docker build -t naveen266/devops-app:${{ github.run_number }} .
+      run: docker build -t naveen266/devops-app:${{ github.run_number }} ./apps
 
     - name: Push Docker Image
       run: docker push naveen266/devops-app:${{ github.run_number }}
